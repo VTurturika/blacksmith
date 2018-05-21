@@ -6,7 +6,7 @@ let instance = null;
 class MaterialController extends Controller {
 
   constructor(server, model) {
-    super();
+    super(model);
 
     if(!instance) {
       server.get('/material', this.getAll);
@@ -14,7 +14,6 @@ class MaterialController extends Controller {
       server.get('/material/:materialId', this.get);
       server.put('/material/:materialId', this.edit);
       server.del('/material/:materialId', this.del);
-      this.model = model;
       instance = this;
     }
     return instance;
@@ -27,7 +26,12 @@ class MaterialController extends Controller {
   }
 
   create(req, res) {
-    res.send('POST /material');
+    Promise.resolve()
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.create(fields))
+      .then(material => res.send(material))
+      .catch(err => res.send(err));
   }
 
   get(req, res) {

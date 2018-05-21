@@ -6,7 +6,7 @@ let instance = null;
 class TagController extends Controller {
 
   constructor(server, model) {
-    super();
+    super(model);
 
     if(!instance) {
       server.get('/tag', this.getAll);
@@ -14,7 +14,6 @@ class TagController extends Controller {
       server.get('/tag/:tagId', this.get);
       server.put('/tag/:tagId', this.edit);
       server.del('/tag/:tagId', this.del);
-      this.model = model;
       instance = this;
     }
     return instance;

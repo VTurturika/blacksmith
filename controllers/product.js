@@ -6,7 +6,7 @@ let instance = null;
 class ProductController extends Controller {
 
   constructor(server, model) {
-    super();
+    super(model);
 
     if(!instance) {
       server.get('/product', this.getAll);
@@ -16,7 +16,6 @@ class ProductController extends Controller {
       server.del('/product/:productId', this.del);
       server.post('/product/stock', this.stock);
       server.post('/product/estimate', this.estimate);
-      this.model = model;
       instance = this;
     }
     return instance;
