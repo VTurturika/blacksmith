@@ -45,7 +45,13 @@ class MaterialController extends Controller {
   }
 
   edit(req, res) {
-    res.send('PUT /material/:materialId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'materialId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.edit(req.params.materialId, fields))
+      .then(material => res.send(material))
+      .catch(err => res.send(err));
   }
 
   del(req, res) {

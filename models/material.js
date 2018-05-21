@@ -57,6 +57,26 @@ class Material extends Model {
     })
   }
 
+  edit(id, newData) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(material => this.materials.updateOne({
+            _id: new this.ObjectID(id)
+          }, {
+            $set: newData
+          })
+        )
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(id)
+            : reject(new this.error.InternalServerError('Db error while updating material'))
+        })
+        .then(material => resolve(material))
+        .catch(err =>reject(this.onUpdateError(err)))
+    })
+  }
+
 }
 
 module.exports = Material;
