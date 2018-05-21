@@ -19,6 +19,16 @@ class Material extends Model {
       .catch(err => this.onUniqueIndexFailed(err))
   }
 
+  getAll() {
+    return new Promise((resolve, reject) => {
+      this.materials
+        .find()
+        .toArray()
+        .then(materials => resolve(materials))
+        .catch(err => reject(err))
+    })
+  }
+
   create(material) {
     return new Promise((resolve, reject) => {
       this.materials
