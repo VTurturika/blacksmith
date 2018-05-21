@@ -32,6 +32,21 @@ class Material extends Model {
     })
   }
 
+  get(id) {
+    return new Promise((resolve, reject) => {
+      this.materials
+        .findOne({
+          _id: new this.ObjectID(id)
+        })
+        .then(material => {
+          return material
+            ? resolve(material)
+            : reject(new this.error.NotFoundError('Material not found'))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
 }
 
 module.exports = Material;

@@ -1,11 +1,13 @@
 'use strict';
 
 const error = require('restify-errors');
+const ObjectID = require('mongodb').ObjectID;
 
 class Model {
 
   constructor(db) {
     this.db = db;
+    this.ObjectID = ObjectID;
     this.error = error;
     this.allowed = [];
     this.required = [];

@@ -1,7 +1,5 @@
 'use strict';
 
-const error = require('restify-errors');
-
 class Controller {
 
   constructor(model) {
@@ -12,7 +10,7 @@ class Controller {
     return new Promise((resolve, reject) => {
       this.model.required.forEach(field => {
         if (!req.body || req.body[field] === undefined) {
-          reject(new error.BadRequestError(`field '${field}' is required`));
+          reject(new this.model.error.BadRequestError(`field '${field}' is required`));
         }
       });
       resolve();
@@ -29,7 +27,23 @@ class Controller {
       });
       return Object.keys(result).length
         ? resolve(result)
-        : reject(new error.BadRequestError('invalid body'))
+        : reject(new this.model.error.BadRequestError('invalid body'))
+    })
+  }
+
+  hasParam(req, param) {
+    return new Promise((resolve, reject) => {
+      return req.params && req.params[param] !== undefined
+        ? resolve(req.params[param])
+        : reject(new this.model.error.BadRequestError(`parameter '${param}' required`))
+    })
+  }
+
+  validateId(id) {
+    return new Promise((resolve, reject) => {
+      return this.model.ObjectID.isValid(id)
+        ? resolve(id)
+        : reject(new this.model.error.BadRequestError('invalid id'))
     })
   }
 

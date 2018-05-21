@@ -35,7 +35,12 @@ class MaterialController extends Controller {
   }
 
   get(req, res) {
-    res.send('GET /material/:materialId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'materialId'))
+      .then(id => instance.validateId(id))
+      .then(id => instance.model.get(id))
+      .then(material => res.send(material))
+      .catch(err => res.send(err));
   }
 
   edit(req, res) {
