@@ -4,8 +4,8 @@ const Model = require('./model');
 
 class Material extends Model {
 
-  constructor() {
-    super();
+  constructor(db) {
+    super(db);
   }
 
 }

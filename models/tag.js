@@ -4,8 +4,8 @@ const Model = require('./model');
 
 class Tag extends Model {
 
-  constructor() {
-    super();
+  constructor(db) {
+    super(db);
   }
 
 }

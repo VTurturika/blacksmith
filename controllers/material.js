@@ -21,7 +21,9 @@ class MaterialController extends Controller {
   }
 
   getAll(req, res) {
-    res.send('GET /material');
+    Promise.resolve()
+      .then(() => instance.model.db.collection('materials').find({}).toArray())
+      .then(results => res.json(results));
   }
 
   create(req, res) {

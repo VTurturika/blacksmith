@@ -4,8 +4,8 @@ const Model = require('./model');
 
 class Product extends Model {
 
-  constructor() {
-    super();
+  constructor(db) {
+    super(db);
   }
 
 }

@@ -9,7 +9,8 @@ server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.queryParser());
 
 Promise.resolve()
-  .then(() => init.controllers(server))
+  .then(() => init.database(config))
+  .then((db) => init.controllers(server, db))
   .then(() => server.listen(config.server.port, onServerStarted))
   .catch(err => onServerFailed(err));
 
