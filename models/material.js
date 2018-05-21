@@ -77,6 +77,27 @@ class Material extends Model {
     })
   }
 
+  del(id) {
+    return new Promise((resolve, reject) => {
+      let material;
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(result => {
+          material = result;
+          return this.materials
+            .deleteOne({
+              _id: material._id
+            })
+        })
+        .then(response => {
+          return response && response.deletedCount
+            ? resolve(material)
+            : reject(new this.error.InternalServerError('Db error while deleting material'));
+        })
+        .catch(err => reject(err))
+    })
+  }
+
 }
 
 module.exports = Material;

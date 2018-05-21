@@ -55,7 +55,12 @@ class MaterialController extends Controller {
   }
 
   del(req, res) {
-    res.send('DELETE /material/:materialId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'materialId'))
+      .then(id => instance.validateId(id))
+      .then(id => instance.model.del(id))
+      .then(material => res.send(material))
+      .catch(err => res.send(err));
   }
 
 }
