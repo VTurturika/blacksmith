@@ -41,7 +41,12 @@ class ProductController extends Controller {
   }
 
   get(req, res) {
-    res.send('GET /product/:productId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(id => instance.model.getTree(id))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   edit(req, res) {
@@ -69,7 +74,7 @@ class ProductController extends Controller {
         return reject(new this.model.error.BadRequestError(`invalid 'materials' field`));
       }
       req.body.materials.forEach((material, i) => {
-        ['id', 'quantity', 'time', 'cost', 'isImproved'].forEach(field => {
+        ['_id', 'quantity', 'time', 'cost', 'isImproved'].forEach(field => {
           return material[field] === undefined
             ? reject(new this.model.error.BadRequestError(`'materials[${i}].${field}' required`))
             : true
@@ -88,7 +93,7 @@ class ProductController extends Controller {
         return reject(new this.model.error.BadRequestError(`invalid 'details' field`));
       }
       req.body.details.forEach((detail, i) => {
-        ['id', 'quantity', 'time', 'cost'].forEach(field => {
+        ['_id', 'quantity', 'time', 'cost'].forEach(field => {
           return detail[field] === undefined
             ? reject(new this.model.error.BadRequestError(`'details[${i}].${field}' required`))
             : true

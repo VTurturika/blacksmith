@@ -42,6 +42,39 @@ class Product extends Model {
     })
   }
 
+  getTree(id) {
+    return new Promise((resolve, reject) => {
+      let result;
+      this.products
+        .findOne({
+          _id: new this.ObjectID(id)
+        })
+        .then(product => {
+          if(!product) {
+            return reject(new this.error.NotFoundError('Product not found'))
+          }
+          result = product;
+
+          if (!result.details.length) {
+            return resolve(result);
+          }
+
+          let promises = [];
+          result.details.forEach(detail => {
+            promises.push(this.getTree(detail._id))
+          });
+
+          return Promise.all(promises);
+        })
+        .then(children => {
+          children = children || [];
+          children.forEach((child, i) => result.details[i].product = child);
+          resolve(result);
+        })
+        .catch(err => reject(err))
+    })
+  }
+
 }
 
 module.exports = Product;
