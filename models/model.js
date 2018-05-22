@@ -26,7 +26,7 @@ class Model {
     this.allowed = fields;
   }
 
-  serRequiredFields(fields) {
+  setRequiredFields(fields) {
     this.required = fields;
   }
 

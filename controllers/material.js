@@ -29,6 +29,7 @@ class MaterialController extends Controller {
   create(req, res) {
     Promise.resolve()
       .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.validateStock(req))
       .then(() => instance.filterAllowedFields(req))
       .then(fields => instance.model.create(fields))
       .then(material => res.send(material))
@@ -48,6 +49,7 @@ class MaterialController extends Controller {
     Promise.resolve()
       .then(() => instance.hasParam(req, 'materialId'))
       .then(id => instance.validateId(id))
+      .then(() => instance.validateStock(req))
       .then(() => instance.filterAllowedFields(req))
       .then(fields => instance.model.edit(req.params.materialId, fields))
       .then(material => res.send(material))
@@ -61,6 +63,18 @@ class MaterialController extends Controller {
       .then(id => instance.model.del(id))
       .then(material => res.send(material))
       .catch(err => res.send(err));
+  }
+
+  validateStock(req) {
+    return new Promise((resolve, reject) => {
+      if (!req.body.stock) {
+        return resolve();
+      }
+      if (req.body.stock.ordinary !== undefined && req.body.stock.improved !== undefined) {
+        return resolve();
+      }
+      reject(new this.model.error.BadRequestError(`invalid 'stock' field`));
+    })
   }
 
 }

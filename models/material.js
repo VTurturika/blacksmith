@@ -10,7 +10,7 @@ class Material extends Model {
       'article', 'image', 'measure', 'width', 'height', 'length',
       'radius', 'price', 'extraCost', 'extraTime', 'stock'
     ]);
-    this.serRequiredFields(['article', 'measure', 'price', 'stock']);
+    this.setRequiredFields(['article', 'measure', 'price', 'stock']);
 
     this.materials = db.collection('materials');
     this.materials
