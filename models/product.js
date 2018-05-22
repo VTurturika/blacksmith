@@ -137,6 +137,27 @@ class Product extends Model {
     })
   }
 
+  del(id) {
+    return new Promise((resolve, reject) => {
+      let product;
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(result => {
+          product = result;
+          return this.products
+            .deleteOne({
+              _id: product._id
+            })
+        })
+        .then(response => {
+          return response && response.deletedCount
+            ? resolve(product)
+            : reject(new this.error.InternalServerError('Db error while deleting product'));
+        })
+        .catch(err => reject(err))
+    })
+  }
+
 }
 
 module.exports = Product;

@@ -76,7 +76,12 @@ class ProductController extends Controller {
   }
 
   del(req, res) {
-    res.send('DELETE /product/:productId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(id => instance.model.del(id))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   addMaterial(req, res) {
