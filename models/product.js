@@ -69,6 +69,21 @@ class Product extends Model {
     })
   }
 
+  get(id) {
+    return new Promise((resolve, reject) => {
+      this.products
+        .findOne({
+          _id: new this.ObjectID(id)
+        })
+        .then(product => {
+          return product
+            ? resolve(product)
+            : reject(new this.error.NotFoundError('Material not found'))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
   getTree(id) {
     return new Promise((resolve, reject) => {
       let result;
@@ -99,6 +114,26 @@ class Product extends Model {
           resolve(result);
         })
         .catch(err => reject(err))
+    })
+  }
+
+  edit(id, newData) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(product => this.products.updateOne({
+            _id: new this.ObjectID(id)
+          }, {
+            $set: newData
+          })
+        )
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(id)
+            : reject(new this.error.InternalServerError('Db error while updating product'))
+        })
+        .then(material => resolve(material))
+        .catch(err =>reject(this.onUpdateError(err)))
     })
   }
 

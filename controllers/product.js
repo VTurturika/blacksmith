@@ -65,7 +65,14 @@ class ProductController extends Controller {
   }
 
   edit(req, res) {
-    res.send('PUT /product/:productId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.setValidation('product'))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.edit(req.params.productId, fields))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   del(req, res) {
