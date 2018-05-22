@@ -7,6 +7,7 @@ class Product extends Model {
   constructor(db) {
     super(db);
     this.products = this.db.collection('products');
+    this.materials = this.db.collection('materials');
     this.products
       .ensureIndex({"article": 1}, {unique: true})
       .then(index => this.onUniqueIndexCreated('products', index))
@@ -155,6 +156,49 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while deleting product'));
         })
         .catch(err => reject(err))
+    })
+  }
+
+  getMaterial(id) {
+    return new Promise((resolve, reject) => {
+      this.materials
+        .findOne({
+          _id: new this.ObjectID(id)
+        })
+        .then(material => {
+          return material
+            ? resolve(material)
+            : reject(new this.error.NotFoundError('Material not found'))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
+  addMaterial(productId, materialId, fields) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.getMaterial(materialId))
+        .then(() => this.get(productId))
+        .then(product => {
+          if(product.materials.find(m => m._id.equals(new this.ObjectID(materialId)))) {
+           return reject(new this.error.BadRequestError(
+             'product already contains this material'
+           ))
+          }
+          fields._id = new this.ObjectID(materialId);
+          return this.products.updateOne({
+            _id: product._id
+          }, {
+            $push: {materials: fields}
+          })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(productId)
+            : reject(new this.error.InternalServerError('Db error while adding material'))
+        })
+        .then(product => resolve(product))
+        .catch(err => reject(err));
     })
   }
 

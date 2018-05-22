@@ -46,9 +46,6 @@ class ProductController extends Controller {
     Promise.resolve()
       .then(() => instance.model.setValidation('product'))
       .then(() => instance.hasRequiredFields(req))
-      .then(() => instance.validateTags(req))
-      .then(() => instance.validateMaterials(req))
-      .then(() => instance.validateDetails(req))
       .then(() => instance.filterAllowedFields(req))
       .then(fileds => instance.model.create(fileds))
       .then(product => res.send(product))
@@ -85,7 +82,19 @@ class ProductController extends Controller {
   }
 
   addMaterial(req, res) {
-    res.send('POST /product/:productId/material/:materialId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.hasParam(req, 'materialId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.setValidation('material'))
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.addMaterial(
+        req.params.productId, req.params.materialId, fields
+      ))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   editMaterial(req, res) {
