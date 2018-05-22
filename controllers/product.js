@@ -26,7 +26,15 @@ class ProductController extends Controller {
   }
 
   create(req, res) {
-    res.send('POST /product');
+    Promise.resolve()
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.validateTags(req))
+      .then(() => instance.validateMaterials(req))
+      .then(() => instance.validateDetails(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fileds => instance.model.create(fileds))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   get(req, res) {
@@ -47,6 +55,56 @@ class ProductController extends Controller {
 
   estimate(req, res) {
     res.send('POST /product/estimate');
+  }
+
+  validateMaterials(req) {
+    return new Promise((resolve, reject) => {
+      if (!req.body.materials) {
+        return resolve();
+      }
+      if (!Array.isArray(req.body.materials)) {
+        return reject(new this.model.error.BadRequestError(`invalid 'materials' field`));
+      }
+      req.body.materials.forEach((material, i) => {
+        ['id', 'quantity', 'time', 'cost', 'isImproved'].forEach(field => {
+          return material[field] === undefined
+            ? reject(new this.model.error.BadRequestError(`'materials[${i}].${field}' required`))
+            : true
+        });
+      });
+      resolve();
+    });
+  }
+
+  validateDetails(req) {
+    return new Promise((resolve, reject) => {
+      if (!req.body.details) {
+        return resolve();
+      }
+      if (!Array.isArray(req.body.details)) {
+        return reject(new this.model.error.BadRequestError(`invalid 'details' field`));
+      }
+      req.body.details.forEach((detail, i) => {
+        ['id', 'quantity', 'time', 'cost'].forEach(field => {
+          return detail[field] === undefined
+            ? reject(new this.model.error.BadRequestError(`'details[${i}].${field}' required`))
+            : true
+        })
+      });
+      resolve();
+    })
+  }
+
+  validateTags(req) {
+    return new Promise((resolve, reject) => {
+      if (!req.body.tags) {
+        return resolve();
+      }
+      if (!Array.isArray(req.body.tags)) {
+        return reject(new this.model.error.BadRequestError(`invalid 'tags' field`));
+      }
+      resolve();
+    })
   }
 
 }
