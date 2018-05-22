@@ -98,7 +98,18 @@ class ProductController extends Controller {
   }
 
   editMaterial(req, res) {
-    res.send('PUT /product/:productId/material/:materialId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.hasParam(req, 'materialId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.setValidation('material'))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.editMaterial(
+        req.params.productId, req.params.materialId, fields
+      ))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   delMaterial(req, res) {

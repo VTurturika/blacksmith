@@ -202,6 +202,36 @@ class Product extends Model {
     })
   }
 
+  editMaterial(productId, materialId, fields) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.getMaterial(materialId))
+        .then(() => this.get(productId))
+        .then(product => {
+          let material = product.materials.find(m => m._id.equals(new this.ObjectID(materialId)))
+          if(!material) {
+            return reject(new this.error.BadRequestError(
+              'product doesn\'t contain this material'
+            ))
+          }
+          Object.keys(fields).forEach(field => material[field] = fields[field]);
+          return this.products.updateOne({
+            _id: product._id,
+            materials: {$elemMatch: {_id: new this.ObjectID(materialId)}},
+          },{
+            $set: {"materials.$": material}
+          })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(productId)
+            : reject(new this.error.InternalServerError('Db error while editing material'))
+        })
+        .then(product => resolve(product))
+        .catch(err => reject(err));
+    })
+  }
+
 }
 
 module.exports = Product;
