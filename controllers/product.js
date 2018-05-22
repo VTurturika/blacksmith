@@ -9,13 +9,27 @@ class ProductController extends Controller {
     super(model);
 
     if(!instance) {
+
       server.get('/product', this.getAll);
       server.post('/product', this.create);
       server.get('/product/:productId', this.get);
       server.put('/product/:productId', this.edit);
       server.del('/product/:productId', this.del);
-      server.post('/product/stock', this.stock);
-      server.post('/product/estimate', this.estimate);
+
+      server.post('/product/:productId/material/:materialId', this.addMaterial);
+      server.put('/product/:productId/material/:materialId', this.editMaterial);
+      server.del('/product/:productId/material/:materialId', this.delMaterial);
+
+      server.post('/product/:productId/detail/:detailId', this.addDetail);
+      server.put('/product/:productId/detail/:detailId', this.editDetail);
+      server.del('/product/:productId/detail/:detailId', this.delDetail);
+
+      server.post('/product/:productId/tag/:tagId', this.addTag);
+      server.del('/product/:productId/tag/:tagId', this.delTag);
+
+      server.post('/product/:productId/stock', this.stock);
+      server.post('/product/:productId/estimate', this.estimate);
+
       instance = this;
     }
     return instance;
@@ -30,6 +44,7 @@ class ProductController extends Controller {
 
   create(req, res) {
     Promise.resolve()
+      .then(() => instance.model.setValidation('product'))
       .then(() => instance.hasRequiredFields(req))
       .then(() => instance.validateTags(req))
       .then(() => instance.validateMaterials(req))
@@ -57,62 +72,44 @@ class ProductController extends Controller {
     res.send('DELETE /product/:productId');
   }
 
+  addMaterial(req, res) {
+    res.send('POST /product/:productId/material/:materialId');
+  }
+
+  editMaterial(req, res) {
+    res.send('PUT /product/:productId/material/:materialId');
+  }
+
+  delMaterial(req, res) {
+    res.send('DELETE /product/:productId/material/:materialId');
+  }
+
+  addDetail(req, res) {
+    res.send('POST /product/:productId/detail/:detailId');
+  }
+
+  editDetail(req, res) {
+    res.send('PUT /product/:productId/detail/:detailId');
+  }
+
+  delDetail(req, res) {
+    res.send('DELETE /product/:productId/detail/:detailId');
+  }
+
+  addTag(req, res) {
+    res.send('POST /product/:productId/tag/:tagId');
+  }
+
+  delTag(req, res) {
+    res.send('DELETE /product/:productId/tag/:tagId');
+  }
+
   stock(req, res) {
-    res.send('POST /product/stock');
+    res.send('POST /product/:productId/stock');
   }
 
   estimate(req, res) {
-    res.send('POST /product/estimate');
-  }
-
-  validateMaterials(req) {
-    return new Promise((resolve, reject) => {
-      if (!req.body.materials) {
-        return resolve();
-      }
-      if (!Array.isArray(req.body.materials)) {
-        return reject(new this.model.error.BadRequestError(`invalid 'materials' field`));
-      }
-      req.body.materials.forEach((material, i) => {
-        ['_id', 'quantity', 'time', 'cost', 'isImproved'].forEach(field => {
-          return material[field] === undefined
-            ? reject(new this.model.error.BadRequestError(`'materials[${i}].${field}' required`))
-            : true
-        });
-      });
-      resolve();
-    });
-  }
-
-  validateDetails(req) {
-    return new Promise((resolve, reject) => {
-      if (!req.body.details) {
-        return resolve();
-      }
-      if (!Array.isArray(req.body.details)) {
-        return reject(new this.model.error.BadRequestError(`invalid 'details' field`));
-      }
-      req.body.details.forEach((detail, i) => {
-        ['_id', 'quantity', 'time', 'cost'].forEach(field => {
-          return detail[field] === undefined
-            ? reject(new this.model.error.BadRequestError(`'details[${i}].${field}' required`))
-            : true
-        })
-      });
-      resolve();
-    })
-  }
-
-  validateTags(req) {
-    return new Promise((resolve, reject) => {
-      if (!req.body.tags) {
-        return resolve();
-      }
-      if (!Array.isArray(req.body.tags)) {
-        return reject(new this.model.error.BadRequestError(`invalid 'tags' field`));
-      }
-      resolve();
-    })
+    res.send('POST /product/:productId/estimate');
   }
 
 }

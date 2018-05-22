@@ -6,17 +6,44 @@ class Product extends Model {
 
   constructor(db) {
     super(db);
-    this.setAllowedFields([
-      'article', 'image', 'measure', 'width', 'height', 'length',
-      'radius', 'tags', 'materials', 'details'
-    ]);
-    this.setRequiredFields(['article', 'measure', 'materials']);
-
     this.products = this.db.collection('products');
     this.products
       .ensureIndex({"article": 1}, {unique: true})
       .then(index => this.onUniqueIndexCreated('products', index))
-      .catch(err => this.onUniqueIndexFailed(err))
+      .catch(err => this.onUniqueIndexFailed(err));
+    this.setValidation('product');
+  }
+
+  setValidation(entity) {
+    return new Promise((resolve, reject) => {
+      switch (entity) {
+        case 'product':
+          this.setAllowedFields([
+            'article', 'image', 'measure', 'width', 'height', 'length', 'radius'
+          ]);
+          this.setRequiredFields(['article', 'measure']);
+          return resolve();
+        case 'material':
+          this.setAllowedFields(['quantity', 'time', 'cost', 'isImproved']);
+          this.setRequiredFields(['quantity', 'time', 'cost', 'isImproved']);
+          return resolve();
+        case 'detail':
+          this.setAllowedFields(['quantity', 'time', 'cost']);
+          this.setRequiredFields(['quantity', 'time', 'cost']);
+          return resolve();
+        case 'stock':
+          this.setAllowedFields(['change']);
+          this.setRequiredFields(['change']);
+          return resolve();
+        case 'estimate':
+          this.setAllowedFields(['quantity']);
+          this.setRequiredFields(['quantity']);
+          return resolve();
+        default:
+          return resolve()
+      }
+    });
+
   }
 
   getAll() {
