@@ -22,7 +22,10 @@ class ProductController extends Controller {
   }
 
   getAll(req, res) {
-    res.send('GET /product');
+    Promise.resolve() //todo add filters
+      .then(() => instance.model.getAll())
+      .then(products => res.send(products))
+      .catch(err => res.send(err));
   }
 
   create(req, res) {

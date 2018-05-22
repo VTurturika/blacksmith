@@ -19,6 +19,16 @@ class Product extends Model {
       .catch(err => this.onUniqueIndexFailed(err))
   }
 
+  getAll() {
+    return new Promise((resolve, reject) => {
+      this.products
+        .find()
+        .toArray()
+        .then(products => resolve(products))
+        .catch(err => reject(err));
+    })
+  }
+
   create(product) {
     return new Promise((resolve, reject) => {
       this.products
