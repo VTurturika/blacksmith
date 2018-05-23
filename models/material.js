@@ -10,8 +10,11 @@ class Material extends Model {
       'article', 'image', 'measure', 'width', 'height', 'length',
       'radius', 'price', 'extraCost', 'extraTime', 'stock'
     ]);
-    this.setRequiredFields(['article', 'measure', 'price', 'stock']);
+    this.setRequiredFields([
+      'article', 'measure', 'price', 'stock', 'extraCost', 'extraTime'
+    ]);
 
+    this.products = db.collection('products');
     this.materials = db.collection('materials');
     this.materials
       .ensureIndex({"article": 1}, {unique: true})
@@ -84,17 +87,34 @@ class Material extends Model {
         .then(() => this.get(id))
         .then(result => {
           material = result;
-          return this.materials
-            .deleteOne({
-              _id: material._id
-            })
+          return this.checkUsage(id);
         })
+        .then(() => this.materials.deleteOne({_id: material._id}))
         .then(response => {
           return response && response.deletedCount
             ? resolve(material)
             : reject(new this.error.InternalServerError('Db error while deleting material'));
         })
         .catch(err => reject(err))
+    })
+  }
+
+  checkUsage(id) {
+    return new Promise((resolve, reject) => {
+      this.products
+        .findOne({
+          materials: {
+            $elemMatch: {_id: new this.ObjectID(id)}
+          }
+        })
+        .then(product => {
+          return !product
+            ? resolve()
+            : reject(new this.error.BadRequestError(
+              `Can't delete. Material used for detail with id '${product._id}'`
+            ))
+        })
+        .catch(err => reject(err));
     })
   }
 
