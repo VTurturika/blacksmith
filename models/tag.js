@@ -42,9 +42,7 @@ class Tag extends Model {
   get(id) {
     return new Promise((resolve, reject) => {
       this.tags
-        .findOne({
-          _id: new this.ObjectID(id)
-        })
+        .findOne({_id: new this.ObjectID(id)})
         .then(tag => {
           return tag
             ? resolve(tag)

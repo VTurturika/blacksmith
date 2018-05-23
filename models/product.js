@@ -8,6 +8,7 @@ class Product extends Model {
     super(db);
     this.products = this.db.collection('products');
     this.materials = this.db.collection('materials');
+    this.tags = this.db.collection('tags');
     this.products
       .ensureIndex({"article": 1}, {unique: true})
       .then(index => this.onUniqueIndexCreated('products', index))
@@ -343,6 +344,46 @@ class Product extends Model {
           return response && response.result && response.result.ok
             ? this.get(productId)
             : reject(new this.error.InternalServerError('Db error while deleting detail'))
+        })
+        .then(product => resolve(product))
+        .catch(err => reject(err));
+    })
+  }
+
+  getTag(id) {
+    return new Promise((resolve, reject) => {
+      this.tags
+        .findOne({_id: new this.ObjectID(id)})
+        .then(tag => {
+          return tag
+            ? resolve(tag)
+            : reject(new this.error.NotFoundError('Tag not found'))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
+  addTag(productId, tagId) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.getTag(tagId))
+        .then(() => this.get(productId))
+        .then(product => {
+          if(product.tags.find(t => t.equals(new this.ObjectID(tagId)))) {
+            return reject(new this.error.BadRequestError(
+              'product already contains this tag'
+            ))
+          }
+          return this.products.updateOne({
+            _id: product._id
+          }, {
+            $push: {tags: new this.ObjectID(tagId)}
+          })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(productId)
+            : reject(new this.error.InternalServerError('Db error while adding tag'))
         })
         .then(product => resolve(product))
         .catch(err => reject(err));

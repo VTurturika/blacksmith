@@ -170,7 +170,14 @@ class ProductController extends Controller {
   }
 
   addTag(req, res) {
-    res.send('POST /product/:productId/tag/:tagId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.hasParam(req, 'tagId'))
+      .then(id => instance.validateId(id))
+      .then(fields => instance.model.addTag(req.params.productId, req.params.tagId))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   delTag(req, res) {
