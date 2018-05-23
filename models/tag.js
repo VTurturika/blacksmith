@@ -16,6 +16,16 @@ class Tag extends Model {
       .catch(err => this.onUniqueIndexFailed(err))
   }
 
+  getAll() {
+    return new Promise((resolve, reject) => {
+      this.tags
+        .find()
+        .toArray()
+        .then(tag => resolve(tag))
+        .catch(err => reject(err))
+    });
+  }
+
   create(tag) {
     return new Promise((resolve, reject) => {
       this.tags
