@@ -390,6 +390,34 @@ class Product extends Model {
     })
   }
 
+  delTag(productId, tagId) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.getTag(tagId))
+        .then(() => this.get(productId))
+        .then(product => {
+          let tag = product.tags.find(t => t.equals(new this.ObjectID(tagId)));
+          if(!tag) {
+            return reject(new this.error.BadRequestError(
+              'product doesn\'t contain this tag'
+            ))
+          }
+          return this.products.updateOne({
+            _id: product._id,
+          },{
+            $pull: {tags: new this.ObjectID(tagId)}
+          })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(productId)
+            : reject(new this.error.InternalServerError('Db error while deleting tag'))
+        })
+        .then(product => resolve(product))
+        .catch(err => reject(err));
+    })
+  }
+
 }
 
 module.exports = Product;

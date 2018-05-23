@@ -181,7 +181,14 @@ class ProductController extends Controller {
   }
 
   delTag(req, res) {
-    res.send('DELETE /product/:productId/tag/:tagId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.hasParam(req, 'tagId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.delTag(req.params.productId, req.params.tagId))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   stock(req, res) {
