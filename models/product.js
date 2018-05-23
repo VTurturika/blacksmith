@@ -250,13 +250,13 @@ class Product extends Model {
           return this.products.updateOne({
             _id: product._id,
           },{
-            $pull: {"materials": {_id: new this.ObjectID(materialId)}}
+            $pull: {materials: {_id: new this.ObjectID(materialId)}}
           })
         })
         .then(response => {
           return response && response.result && response.result.ok
             ? this.get(productId)
-            : reject(new this.error.InternalServerError('Db error while editing material'))
+            : reject(new this.error.InternalServerError('Db error while deleting material'))
         })
         .then(product => resolve(product))
         .catch(err => reject(err));
@@ -315,6 +315,34 @@ class Product extends Model {
           return response && response.result && response.result.ok
             ? this.get(productId)
             : reject(new this.error.InternalServerError('Db error while editing detail'))
+        })
+        .then(product => resolve(product))
+        .catch(err => reject(err));
+    })
+  }
+
+  delDetail(productId, detailId) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.get(detailId))
+        .then(() => this.get(productId))
+        .then(product => {
+          let detail = product.details.find(d => d._id.equals(new this.ObjectID(detailId)));
+          if(!detail) {
+            return reject(new this.error.BadRequestError(
+              'product doesn\'t contain this detail'
+            ))
+          }
+          return this.products.updateOne({
+            _id: product._id,
+          },{
+            $pull: {details: {_id: new this.ObjectID(detailId)}}
+          })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(productId)
+            : reject(new this.error.InternalServerError('Db error while deleting detail'))
         })
         .then(product => resolve(product))
         .catch(err => reject(err));

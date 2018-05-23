@@ -157,7 +157,16 @@ class ProductController extends Controller {
   }
 
   delDetail(req, res) {
-    res.send('DELETE /product/:productId/detail/:detailId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.hasParam(req, 'detailId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.delDetail(
+        req.params.productId, req.params.detailId
+      ))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   addTag(req, res) {
