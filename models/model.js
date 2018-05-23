@@ -32,7 +32,7 @@ class Model {
 
   onUpdateError(err) {
     return err.code === 11000
-      ? new this.error.BadRequestError('Given article already used')
+      ? new this.error.BadRequestError('Given value already used')
       : err
   }
 }

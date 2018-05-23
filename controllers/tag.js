@@ -24,7 +24,12 @@ class TagController extends Controller {
   }
 
   create(req, res) {
-    res.send('POST /tag');
+    Promise.resolve()
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.create(fields))
+      .then(tag => res.send(tag))
+      .catch(err => res.send(err));
   }
 
   get(req, res) {
