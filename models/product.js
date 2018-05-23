@@ -63,6 +63,7 @@ class Product extends Model {
       product.tags = [];
       product.details = [];
       product.materials = [];
+      product.stock = 0;
       this.products
         .insertOne(product)
         .then(response => {
@@ -83,7 +84,7 @@ class Product extends Model {
         .then(product => {
           return product
             ? resolve(product)
-            : reject(new this.error.NotFoundError('Material not found'))
+            : reject(new this.error.NotFoundError('Product not found'))
         })
         .catch(err => reject(err))
     })
@@ -149,17 +150,34 @@ class Product extends Model {
         .then(() => this.get(id))
         .then(result => {
           product = result;
-          return this.products
-            .deleteOne({
-              _id: product._id
-            })
+          return this.checkUsage(id);
         })
+        .then(() => this.products.deleteOne({_id: product._id}))
         .then(response => {
           return response && response.deletedCount
             ? resolve(product)
             : reject(new this.error.InternalServerError('Db error while deleting product'));
         })
         .catch(err => reject(err))
+    })
+  }
+
+  checkUsage(id) {
+    return new Promise((resolve, reject) => {
+      this.products
+        .findOne({
+          details: {
+            $elemMatch: {_id: new this.ObjectID(id)}
+          }
+        })
+        .then(product => {
+          return !product
+            ? resolve()
+            : reject(new this.error.BadRequestError(
+              `Can't delete. Detail used for product with id '${product._id}'`
+            ))
+        })
+        .catch(err => reject(err));
     })
   }
 
