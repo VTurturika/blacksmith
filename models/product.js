@@ -98,25 +98,45 @@ class Product extends Model {
           _id: new this.ObjectID(id)
         })
         .then(product => {
-          if(!product) {
+          if (!product) {
             return reject(new this.error.NotFoundError('Product not found'))
           }
           result = product;
 
-          if (!result.details.length) {
+          // fetch all materials
+          let materials = [];
+          result.materials.forEach(material => {
+            materials.push(this.getMaterial(material._id))
+          });
+
+          return Promise.all(materials);
+        })
+        .then(materials => {
+          materials.forEach((material, i) => result.materials[i].material = material);
+
+          //fetch all tags
+          let tags = [];
+          result.tags.forEach(tag => tags.push(this.getTag(tag)));
+
+          return Promise.all(tags)
+        })
+        .then(tags => {
+          result.tags = tags;
+
+          if (!result.details.length) { //stop recursion
             return resolve(result);
           }
 
-          let promises = [];
+          //fetch all details recursively
+          let details = [];
           result.details.forEach(detail => {
-            promises.push(this.getTree(detail._id))
+            details.push(this.getTree(detail._id))
           });
 
-          return Promise.all(promises);
+          return Promise.all(details);
         })
-        .then(children => {
-          children = children || [];
-          children.forEach((child, i) => result.details[i].product = child);
+        .then(details => {
+          details.forEach((detail, i) => result.details[i].product = detail);
           resolve(result);
         })
         .catch(err => reject(err))
