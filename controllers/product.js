@@ -126,7 +126,19 @@ class ProductController extends Controller {
   }
 
   addDetail(req, res) {
-    res.send('POST /product/:productId/detail/:detailId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.hasParam(req, 'detailId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.setValidation('detail'))
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.addDetail(
+        req.params.productId, req.params.detailId, fields
+      ))
+      .then(product => res.send(product))
+      .catch(err => res.send(err));
   }
 
   editDetail(req, res) {

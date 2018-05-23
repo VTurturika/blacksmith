@@ -260,6 +260,34 @@ class Product extends Model {
     })
   }
 
+  addDetail(productId, detailId, fields) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.get(detailId))
+        .then(() => this.get(productId))
+        .then(product => {
+          if(product.details.find(d => d._id.equals(new this.ObjectID(detailId)))) {
+            return reject(new this.error.BadRequestError(
+              'product already contains this detail'
+            ))
+          }
+          fields._id = new this.ObjectID(detailId);
+          return this.products.updateOne({
+            _id: product._id
+          }, {
+            $push: {details: fields}
+          })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(productId)
+            : reject(new this.error.InternalServerError('Db error while adding detail'))
+        })
+        .then(product => resolve(product))
+        .catch(err => reject(err));
+    })
+  }
+
 }
 
 module.exports = Product;
