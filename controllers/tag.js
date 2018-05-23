@@ -45,7 +45,13 @@ class TagController extends Controller {
   }
 
   edit(req, res) {
-    res.send('PUT /tag/:tagId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'tagId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.edit(req.params.tagId, fields))
+      .then(tag => res.send(tag))
+      .catch(err => res.send(err));
   }
 
   del(req, res) {
