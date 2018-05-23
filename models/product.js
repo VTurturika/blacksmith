@@ -59,6 +59,9 @@ class Product extends Model {
 
   create(product) {
     return new Promise((resolve, reject) => {
+      product.tags = [];
+      product.details = [];
+      product.materials = [];
       this.products
         .insertOne(product)
         .then(response => {
