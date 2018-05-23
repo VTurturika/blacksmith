@@ -55,7 +55,12 @@ class TagController extends Controller {
   }
 
   del(req, res) {
-    res.send('DELETE /tag/:tagId');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'tagId'))
+      .then(id => instance.validateId(id))
+      .then(id => instance.model.del(id))
+      .then(tag => res.send(tag))
+      .catch(err => res.send(err));
   }
 
 }

@@ -74,6 +74,27 @@ class Tag extends Model {
     })
   }
 
+  del(id) {
+    return new Promise((resolve, reject) => {
+      let tag;
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(result => {
+          tag = result;
+          return this.tags
+            .deleteOne({
+              _id: tag._id
+            })
+        })
+        .then(response => {
+          return response && response.deletedCount
+            ? resolve(tag)
+            : reject(new this.error.InternalServerError('Db error while deleting tag'));
+        })
+        .catch(err => reject(err))
+    })
+  }
+
 }
 
 module.exports = Tag;
