@@ -5,14 +5,13 @@ const server = restify.createServer();
 const config = require('./config');
 const init = require('./init');
 
+const corsMiddleware = require('restify-cors-middleware');
+const cors = corsMiddleware({origins: ['*']});
+server.pre(cors.preflight);
+server.use(cors.actual);
+
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.queryParser());
-server.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, DELETE')
-  next();
-});
 
 Promise.resolve()
   .then(() => init.database(config))
