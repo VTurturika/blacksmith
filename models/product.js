@@ -201,6 +201,261 @@ class Product extends Model {
     })
   }
 
+  estimate(productId, quantity) {
+    return new Promise((resolve, reject) => {
+
+      let result = {
+        enough: true,
+        time: 0,
+        cost: 0,
+        details: []
+      };
+      let product;
+
+      Promise.resolve()
+        .then(() => this.get(productId))
+        .then(dbProduct => {
+          product = dbProduct;
+
+          //estimate materials
+          let materials = [];
+          product.materials.forEach(material => {
+            materials.push(this.estimateMaterial(material, quantity))
+          });
+
+          return Promise.all(materials);
+        })
+        .then(materials => {
+          result.enough = materials.every(material => material.enough);
+          materials.forEach(material => {
+            result.time += material.apply.time;
+            result.cost += material.apply.cost;
+          });
+          result.materials = materials;
+
+          if (!product.details.length) {
+            return resolve(result);
+          }
+
+          //estimate details;
+          let details = [];
+          product.details.forEach(detail => {
+            details.push(this.estimateDetail(detail, quantity))
+          });
+
+          return Promise.all(details);
+        })
+        .then(details => {
+
+          details = details || [];
+          let isEnoughDetails = details.every(detail => detail.enough);
+          result.enough = result.enough && isEnoughDetails;
+
+          let notEnoughDetails = [];
+          details.forEach(detail => {
+            if (detail.enough) {
+              result.time += detail.apply.time;
+              result.cost += detail.apply.cost;
+              result.details.push(detail);
+            }
+            else {
+              notEnoughDetails.push(this.estimate(detail.detail._id, detail.createNew));
+            }
+          });
+
+          if (!notEnoughDetails.length) {
+            return resolve(result);
+          }
+
+          return Promise.all(notEnoughDetails);
+        })
+        .then(details => {
+          details = details || [];
+          details.forEach(detail => {
+            result.time += detail.time;
+            result.cost += detail.cost;
+            result.details.push(detail);
+          });
+
+          resolve(result);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  estimateMaterial(dependency, quantity) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.getMaterial(dependency._id))
+        .then(material => {
+
+          let requiredQuantity = dependency.quantity * quantity;
+          let currentQuantity = dependency.isImproved
+            ? material.stock.improved
+            : material.stock.ordinary;
+          //enough materials in stock
+          if (requiredQuantity <= currentQuantity) {
+            return resolve({
+              enough: true,
+              requiredQuantity: requiredQuantity,
+              apply: {
+                time: dependency.time * quantity,
+                cost: dependency.cost * quantity
+              },
+              useExisting: {
+                ordinary: dependency.isImproved
+                  ? 0
+                  : requiredQuantity,
+                improved: dependency.isImproved
+                  ? requiredQuantity
+                  : 0
+              },
+              purchaseOrdinary: {
+                quantity: 0,
+                cost: 0
+              },
+              createImproved: {
+                quantity: 0,
+                time: 0,
+                cost: 0
+              },
+              material: material,
+              dependency: dependency
+            })
+          }
+          //not enough improved materials but we can create some from ordinary
+          else if (dependency.isImproved &&
+            requiredQuantity <= material.stock.improved + material.stock.ordinary
+          ) {
+            let needCreateImproved = requiredQuantity - material.stock.improved;
+            let needCreateTime = needCreateImproved * material.extraTime;
+            let needCreateCost = needCreateImproved * material.extraCost;
+            return resolve({
+              enough: false,
+              requiredQuantity: requiredQuantity,
+              apply: {
+                time: dependency.time * quantity + needCreateTime,
+                cost: dependency.cost * quantity + needCreateCost
+              },
+              useExisting: {
+                ordinary: needCreateImproved,
+                improved: material.stock.improved
+              },
+              purchaseOrdinary: {
+                quantity: 0,
+                cost: 0
+              },
+              createImproved: {
+                quantity: needCreateImproved,
+                time: needCreateTime,
+                cost: needCreateCost
+              },
+              material: material,
+              dependency: dependency
+            })
+          }
+          //not enough improved and ordinary both, need purchase ordinary materials
+          else if (dependency.isImproved &&
+            requiredQuantity > material.stock.improved + material.stock.ordinary
+          ) {
+            let needPurchaseAndImprove = requiredQuantity
+              - material.stock.improved - material.stock.ordinary;
+            let needCreateTime = needPurchaseAndImprove * material.extraTime;
+            let needCreateCost = needPurchaseAndImprove * material.extraCost;
+            return resolve({
+              enough: false,
+              requiredQuantity: requiredQuantity,
+              apply: {
+                time: dependency.time * quantity + needCreateTime,
+                cost: dependency.cost * quantity + needCreateCost
+              },
+              useExisting: {
+                ordinary: material.stock.ordinary,
+                improved: material.stock.improved
+              },
+              purchaseOrdinary: {
+                quantity: needPurchaseAndImprove,
+                cost: needPurchaseAndImprove * material.price
+              },
+              createImproved: {
+                quantity: needPurchaseAndImprove,
+                time: needCreateTime,
+                cost: needCreateCost
+              },
+              material: material,
+              dependency: dependency
+            })
+          }
+          //not enough ordinary materials
+          else {
+            return resolve({
+              enough: false,
+              requiredQuantity: requiredQuantity,
+              apply: {
+                time: dependency.time * quantity,
+                cost: dependency.cost * quantity
+              },
+              useExisting: {
+                ordinary: material.stock.ordinary,
+                improved: 0
+              },
+              purchaseOrdinary: {
+                quantity: requiredQuantity - currentQuantity,
+                cost: (requiredQuantity - currentQuantity) * material.price
+              },
+              createImproved: {
+                quantity: 0,
+                time: 0,
+                cost: 0
+              },
+              material: material,
+              dependency: dependency
+            })
+          }
+        })
+        .catch(err => reject(err))
+    })
+  }
+
+  estimateDetail(dependency, quantity) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.get(dependency._id))
+        .then(detail => {
+          let requiredQuantity = dependency.quantity * quantity;
+          if (requiredQuantity <= detail.stock) {
+            return resolve({
+              enough: true,
+              requiredQuantity: requiredQuantity,
+              apply: {
+                time: dependency.time * quantity,
+                cost: detail.cost * quantity
+              },
+              useExisting: requiredQuantity,
+              createNew: 0,
+              detail: detail,
+              dependency: dependency
+            })
+          }
+          else {
+            return resolve({
+              enough: false,
+              requiredQuantity: requiredQuantity,
+              apply: {
+                time: dependency.time * quantity,
+                cost: detail.cost * quantity
+              },
+              useExisting: detail.stock,
+              createNew: requiredQuantity - detail.stock,
+              detail: detail,
+              dependency: dependency
+            })
+          }
+        })
+        .catch(err => reject(err));
+    });
+  }
+
   getMaterial(id) {
     return new Promise((resolve, reject) => {
       this.materials

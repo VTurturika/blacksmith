@@ -196,7 +196,15 @@ class ProductController extends Controller {
   }
 
   estimate(req, res) {
-    res.send('POST /product/:productId/estimate');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.setValidation('estimate'))
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.model.estimate(req.params.productId, fields.quantity))
+      .then(estimate => res.send(estimate))
+      .catch(err => res.send(err));
   }
 
 }
