@@ -22,7 +22,7 @@ class Tag extends Model {
         .find()
         .toArray()
         .then(tag => resolve(tag))
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     });
   }
 
@@ -35,7 +35,7 @@ class Tag extends Model {
             ? resolve(tag)
             : reject(new this.error.InternalServerError('Db error while creating tag'))
         })
-        .catch(err => reject(this.onUpdateError(err)))
+        .catch(err => reject(this.onServerError(err)))
     })
   }
 
@@ -48,7 +48,7 @@ class Tag extends Model {
             ? resolve(tag)
             : reject(new this.error.NotFoundError('Tag not found'))
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -68,7 +68,7 @@ class Tag extends Model {
             : reject(new this.error.InternalServerError('Db error while updating tag'))
         })
         .then(tag => resolve(tag))
-        .catch(err =>reject(this.onUpdateError(err)))
+        .catch(err =>reject(this.onServerError(err)))
     })
   }
 
@@ -89,7 +89,7 @@ class Tag extends Model {
             ? resolve(tag)
             : reject(new this.error.InternalServerError('Db error while deleting tag'));
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 

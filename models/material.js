@@ -28,7 +28,7 @@ class Material extends Model {
         .find()
         .toArray()
         .then(materials => resolve(materials))
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -41,7 +41,7 @@ class Material extends Model {
             ? resolve(material)
             : reject(new this.error.InternalServerError('Db error while creating material'))
         })
-        .catch(err => reject(this.onUpdateError(err)))
+        .catch(err => reject(this.onServerError(err)))
     })
   }
 
@@ -56,7 +56,7 @@ class Material extends Model {
             ? resolve(material)
             : reject(new this.error.NotFoundError('Material not found'))
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -76,7 +76,7 @@ class Material extends Model {
             : reject(new this.error.InternalServerError('Db error while updating material'))
         })
         .then(material => resolve(material))
-        .catch(err =>reject(this.onUpdateError(err)))
+        .catch(err =>reject(this.onServerError(err)))
     })
   }
 
@@ -95,7 +95,7 @@ class Material extends Model {
             ? resolve(material)
             : reject(new this.error.InternalServerError('Db error while deleting material'));
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -114,7 +114,7 @@ class Material extends Model {
               `Can't delete. Material used for detail with id '${product._id}'`
             ))
         })
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 

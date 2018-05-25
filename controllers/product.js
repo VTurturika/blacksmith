@@ -192,7 +192,24 @@ class ProductController extends Controller {
   }
 
   stock(req, res) {
-    res.send('POST /product/:productId/stock');
+    Promise.resolve()
+      .then(() => instance.hasParam(req, 'productId'))
+      .then(id => instance.validateId(id))
+      .then(() => instance.model.setValidation('stock'))
+      .then(() => instance.hasRequiredFields(req))
+      .then(() => instance.filterAllowedFields(req))
+      .then(fields => instance.validateStockChange(fields))
+      .then(change => instance.model.stock(req.params.productId, change))
+      .then(stock => res.send(stock))
+      .catch(err => res.send(err));
+  }
+
+  validateStockChange(fields) {
+    return new Promise((resolve, reject) => {
+      return +fields.change
+        ? resolve(+fields.change)
+        : reject(new instance.model.error.BadRequestError("invalid 'change' field"));
+    })
   }
 
   estimate(req, res) {

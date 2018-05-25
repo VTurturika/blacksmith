@@ -54,7 +54,7 @@ class Product extends Model {
         .find()
         .toArray()
         .then(products => resolve(products))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -71,7 +71,7 @@ class Product extends Model {
             ? resolve(product)
             : reject(new this.error.InternalServerError('Db error while creating product'))
         })
-        .catch(err => reject(this.onUpdateError(err)))
+        .catch(err => reject(this.onServerError(err)))
     })
   }
 
@@ -86,7 +86,7 @@ class Product extends Model {
             ? resolve(product)
             : reject(new this.error.NotFoundError('Product not found'))
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -141,7 +141,7 @@ class Product extends Model {
               resolve(result);
             })
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -160,8 +160,8 @@ class Product extends Model {
             ? this.get(id)
             : reject(new this.error.InternalServerError('Db error while updating product'))
         })
-        .then(material => resolve(material))
-        .catch(err =>reject(this.onUpdateError(err)))
+        .then(product => resolve(product))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -180,7 +180,7 @@ class Product extends Model {
             ? resolve(product)
             : reject(new this.error.InternalServerError('Db error while deleting product'));
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -199,7 +199,7 @@ class Product extends Model {
               `Can't delete. Detail used for product with id '${product._id}'`
             ))
         })
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -278,7 +278,7 @@ class Product extends Model {
                 })
             })
         })
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     });
   }
 
@@ -320,7 +320,7 @@ class Product extends Model {
                 : material.stock.ordinary - requiredQuantity,
               improved: dependency.isImproved
                 ? material.stock.improved - requiredQuantity
-                : material.stock.ordinary
+                : material.stock.improved
             };
             result.purchaseOrdinary = {
               quantity: 0,
@@ -430,7 +430,173 @@ class Product extends Model {
           }
           resolve(result);
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)))
+    })
+  }
+
+  stock(id, change) {
+    return new Promise((resolve, reject) => {
+      if (change < 0) {
+        this.estimate(id, -change)
+          .then(estimate => {
+            if (estimate.enough) {
+              this.reduceStock(id, change)
+                .then(product => resolve({
+                  success: true,
+                  product: product,
+                  estimate: null
+                }))
+                .catch(err =>reject(this.onServerError(err)))
+            }
+            else {
+              resolve({
+                success: false,
+                product: null,
+                estimate: estimate
+              })
+            }
+          })
+      }
+      else {
+        Promise.resolve()
+          .then(() => this.get(id))
+          .then(product => this.estimate(id, product.stock + change))
+          .then(estimate => {
+            let enoughMaterials = estimate.materials.every(material => material.enough);
+            let enoughDetails = estimate.details.every(detail => detail.enough);
+            if (enoughMaterials && enoughDetails) {
+              this.increaseStock(id, change)
+                .then(product => resolve({
+                  success: true,
+                  product: product,
+                  estimate: false
+                }))
+                .catch(err =>reject(this.onServerError(err)))
+            }
+            else {
+              resolve({
+                success: false,
+                product: null,
+                estimate: estimate
+              })
+            }
+          })
+          .catch(err =>reject(this.onServerError(err)));
+      }
+    });
+  }
+
+  reduceStock(id, change) {
+    return new Promise((resolve, reject) => {
+      this.products
+        .updateOne({
+          _id: new this.ObjectID(idededed)
+        }, {
+          $inc: {stock: change}
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? this.get(id)
+            : reject(new this.error.InternalServerError('Db error while reducing product stock'))
+        })
+        .then(product => resolve(product))
+        .catch(err =>reject(this.onServerError(err)))
+    });
+  }
+
+  increaseStock(id, change) {
+    return new Promise((resolve, reject) => {
+      let materials;
+      let details;
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(product => {
+          materials = product.materials;
+          details = product.details;
+          return this.products
+            .updateOne({
+              _id: new this.ObjectID(id)
+            }, {
+              $inc: {stock: change}
+            })
+        })
+        .then(response => {
+          if (!response || !response.result || !response.result.ok) {
+            return reject(new this.error.InternalServerError(
+              'Db error while increasing product stock'
+            ));
+          }
+
+          let promises = [];
+          materials.forEach(material => {
+            promises.push(this.reduceMaterialStock(
+              material._id, material.quantity * change, material.isImproved
+            ))
+          });
+
+          return Promise.all(promises);
+        })
+        .then(materialIds => {
+
+          let promises = [];
+          details.forEach(detail => {
+            promises.push(this.reduceDetailStock(detail._id, detail.quantity * change));
+          });
+
+          return Promise.all(promises)
+        })
+        .then(detailIds => this.getTree(id))
+        .then(product => resolve(product))
+        .catch(err =>reject(this.onServerError(err)));
+    });
+  }
+
+  reduceMaterialStock(id, change, isImproved) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.getMaterial(id))
+        .then(material => {
+          let type = isImproved
+            ? 'improved'
+            : 'ordinary';
+          let update = {};
+          update[`stock.${type}`] = -change;
+          return this.materials.updateOne({
+              _id: new this.ObjectID(id)
+            }, {
+              $inc: update
+            })
+        })
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? resolve(id)
+            : reject(new this.error.InternalServerError(
+              `Db error while reducing material '${id}' stock`
+            ))
+        })
+        .catch(err =>reject(this.onServerError(err)));
+    })
+  }
+
+  reduceDetailStock(id, change) {
+    return new Promise((resolve, reject) => {
+      Promise.resolve()
+        .then(() => this.get(id))
+        .then(detail => this.products.updateOne({
+            _id: new this.ObjectID(id)
+          }, {
+            $inc: {stock: -change}
+          })
+        )
+        .then(response => {
+          return response && response.result && response.result.ok
+            ? resolve(id)
+            : reject(new this.error.InternalServerError(
+              `Db error while reducing detail '${id}' stock`
+            ))
+        })
+        .catch(err =>reject(this.onServerError(err)));
+
     })
   }
 
@@ -445,7 +611,7 @@ class Product extends Model {
             ? resolve(material)
             : reject(new this.error.NotFoundError('Material not found'))
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -473,7 +639,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while adding material'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -503,7 +669,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while editing material'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -531,7 +697,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while deleting material'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -559,7 +725,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while adding detail'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -589,7 +755,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while editing detail'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -617,7 +783,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while deleting detail'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -630,7 +796,7 @@ class Product extends Model {
             ? resolve(tag)
             : reject(new this.error.NotFoundError('Tag not found'))
         })
-        .catch(err => reject(err))
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -657,7 +823,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while adding tag'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 
@@ -685,7 +851,7 @@ class Product extends Model {
             : reject(new this.error.InternalServerError('Db error while deleting tag'))
         })
         .then(product => resolve(product))
-        .catch(err => reject(err));
+        .catch(err =>reject(this.onServerError(err)));
     })
   }
 

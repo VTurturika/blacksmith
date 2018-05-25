@@ -30,10 +30,10 @@ class Model {
     this.required = fields;
   }
 
-  onUpdateError(err) {
+  onServerError(err) {
     return err.code === 11000
       ? new this.error.BadRequestError('Given value already used')
-      : err
+      : new this.error.InternalServerError(err.message)
   }
 }
 
