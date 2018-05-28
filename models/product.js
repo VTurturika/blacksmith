@@ -21,9 +21,9 @@ class Product extends Model {
       switch (entity) {
         case 'product':
           this.setAllowedFields([
-            'article', 'image', 'measure', 'width', 'height', 'length', 'radius'
+            'article', 'image', 'measure', 'width', 'height', 'length', 'radius', 'name'
           ]);
-          this.setRequiredFields(['article', 'measure']);
+          this.setRequiredFields(['article', 'measure', 'name']);
           return resolve();
         case 'material':
           this.setAllowedFields(['quantity', 'time', 'cost', 'isImproved']);

@@ -8,10 +8,10 @@ class Material extends Model {
     super(db);
     this.setAllowedFields([
       'article', 'image', 'measure', 'width', 'height', 'length',
-      'radius', 'price', 'extraCost', 'extraTime', 'stock'
+      'radius', 'price', 'extraCost', 'extraTime', 'stock', 'name'
     ]);
     this.setRequiredFields([
-      'article', 'measure', 'price', 'stock', 'extraCost', 'extraTime'
+      'article', 'measure', 'price', 'stock', 'extraCost', 'extraTime', 'name'
     ]);
 
     this.products = db.collection('products');
