@@ -19,9 +19,9 @@ class MaterialController extends Controller {
     return instance;
   }
 
-  getAll(req, res) { //todo add filters
+  getAll(req, res) {
     Promise.resolve()
-      .then(() => instance.model.getAll())
+      .then(() => instance.model.getAll(req.query))
       .then(materials => res.send(materials))
       .catch(err => res.send(err));
   }

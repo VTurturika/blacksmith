@@ -22,14 +22,73 @@ class Material extends Model {
       .catch(err => this.onUniqueIndexFailed(err))
   }
 
-  getAll() {
+  getAll(filters) {
     return new Promise((resolve, reject) => {
       this.materials
-        .find()
+        .find(this.prepareFilters(filters))
         .toArray()
         .then(materials => resolve(materials))
         .catch(err =>reject(this.onServerError(err)));
     })
+  }
+
+  prepareFilters(filters) {
+
+    let result = {};
+
+    if (filters.article) {
+      result.article = filters.article
+    }
+    if (filters.measure) {
+      result.measure = filters.measure;
+    }
+    if (filters.widthMin !== undefined && filters.widthMax !== undefined) {
+      result.width = {
+        $gte: +filters.widthMin,
+        $lte: +filters.widthMax
+      }
+    }
+    if (filters.heightMin !== undefined && filters.heightMax !== undefined) {
+      result.height = {
+        $gte: +filters.heightMin,
+        $lte: +filters.heightMax
+      }
+    }
+    if (filters.lengthMin !== undefined && filters.lengthMax !== undefined) {
+      result.length = {
+        $gte: +filters.lengthMin,
+        $lte: +filters.lengthMax
+      }
+    }
+    if (filters.radiusMin !== undefined && filters.radiusMax !== undefined) {
+      result.radius = {
+        $gte: +filters.radiusMin,
+        $lte: +filters.radiusMax
+      }
+    }
+
+    if (filters.priceMin !== undefined && filters.priceMax !== undefined) {
+      result.price = {
+        $gte: +filters.priceMin,
+        $lte: +filters.priceMax
+      }
+    }
+
+    if (filters.extraCostMin !== undefined && filters.extraCostMax !== undefined) {
+      result.extraCost = {
+        $gte: +filters.extraCostMin,
+        $lte: +filters.extraCostMax
+      }
+    }
+
+    if (filters.extraTimeMin !== undefined && filters.extraTimeMax !== undefined) {
+      result.extraTime = {
+        $gte: +filters.extraTimeMin,
+        $lte: +filters.extraTimeMax
+      }
+    }
+
+    return result;
   }
 
   create(material) {
