@@ -19,9 +19,9 @@ class TagController extends Controller {
     return instance;
   }
 
-  getAll(req, res) { //todo add filters
+  getAll(req, res) {
     Promise.resolve()
-      .then(() => instance.model.getAll())
+      .then(() => instance.model.getAll(req.query))
       .then(tags => res.send(tags))
       .catch(err => res.send(err));
   }

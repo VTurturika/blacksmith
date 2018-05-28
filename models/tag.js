@@ -16,14 +16,26 @@ class Tag extends Model {
       .catch(err => this.onUniqueIndexFailed(err))
   }
 
-  getAll() {
+  getAll(filters) {
     return new Promise((resolve, reject) => {
       this.tags
-        .find()
+        .find(this.prepareFilters(filters))
         .toArray()
         .then(tag => resolve(tag))
         .catch(err =>reject(this.onServerError(err)));
     });
+  }
+
+  prepareFilters(filters) {
+
+    let result = {};
+
+    if (filters.name) {
+      result.$or = [];
+      filters.name.split(',').forEach(name => result.$or.push({name: name}));
+    }
+
+    return result;
   }
 
   create(tag) {
