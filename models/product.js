@@ -48,14 +48,58 @@ class Product extends Model {
 
   }
 
-  getAll() {
+  getAll(filters) {
     return new Promise((resolve, reject) => {
       this.products
-        .find()
+        .find(this.prepareFilters(filters))
         .toArray()
         .then(products => resolve(products))
         .catch(err =>reject(this.onServerError(err)));
     })
+  }
+
+  prepareFilters(filters) {
+
+    let result = {};
+
+    if (filters.article) {
+      result.article = filters.article
+    }
+    if (filters.measure) {
+      result.measure = filters.measure;
+    }
+    if (filters.tags) {
+      result.$or = [];
+      filters.tags.split(',').forEach(tag => {
+        result.$or.push({tags: new this.ObjectID(tag.trim())})
+      })
+    }
+    if (filters.widthMin !== undefined && filters.widthMax !== undefined) {
+      result.width = {
+        $gte: +filters.widthMin,
+        $lte: +filters.widthMax
+      }
+    }
+    if (filters.heightMin !== undefined && filters.heightMax !== undefined) {
+      result.height = {
+        $gte: +filters.heightMin,
+        $lte: +filters.heightMax
+      }
+    }
+    if (filters.lengthMin !== undefined && filters.lengthMax !== undefined) {
+      result.length = {
+        $gte: +filters.lengthMin,
+        $lte: +filters.lengthMax
+      }
+    }
+    if (filters.radiusMin !== undefined && filters.radiusMax !== undefined) {
+      result.radius = {
+        $gte: +filters.radiusMin,
+        $lte: +filters.radiusMax
+      }
+    }
+
+    return result;
   }
 
   create(product) {

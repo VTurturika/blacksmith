@@ -36,8 +36,8 @@ class ProductController extends Controller {
   }
 
   getAll(req, res) {
-    Promise.resolve() //todo add filters
-      .then(() => instance.model.getAll())
+    Promise.resolve()
+      .then(() => instance.model.getAll(req.query))
       .then(products => res.send(products))
       .catch(err => res.send(err));
   }
